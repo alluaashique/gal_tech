@@ -131,31 +131,38 @@ class QuizController extends Controller
         $answerId = (int) $request->answerId;
 
 
-      
+        DB::beginTransaction();
+        try{
 
-        // $quiz = Quiz::with('questions','questions.options')
-        // ->where('code', $quizId)->first();
-        $quiz = Quiz::where('code', $quizId)->first();
-        if($quiz)
-        {
-            $question = Question::where('question_id', $questionId)
-                        ->where('quiz_id', $quiz->id)
-                        ->first();
-            if($question)
+            // $quiz = Quiz::with('questions','questions.options')
+            // ->where('code', $quizId)->first();
+            $quiz = Quiz::where('code', $quizId)->first();
+            if($quiz)
             {
-                $is_answered = $answerId > 0 ? true : false;
-                $updateOption = Option::where('id', $answerId)
-                        ->where('question_id', $question->id)
-                        ->where('quiz_id', $quiz->id)
-                        ->update(['is_answered' => $is_answered]);
-                // if($updateOption)
-                // {
-                    
-                    $updateQuestion = Question::where('id', $question->id)
-                        ->where('quiz_id', $quiz->id)
-                        ->update(['is_answered' => true]);                   
-                // }
+                $question = Question::where('question_id', $questionId)
+                            ->where('quiz_id', $quiz->id)
+                            ->first();
+                if($question)
+                {
+                    $is_answered = $answerId > 0 ? true : false;
+                    $updateOption = Option::where('id', $answerId)
+                            ->where('question_id', $question->id)
+                            ->where('quiz_id', $quiz->id)
+                            ->update(['is_answered' => $is_answered]);
+                    // if($updateOption)
+                    // {
+                        
+                        $updateQuestion = Question::where('id', $question->id)
+                            ->where('quiz_id', $quiz->id)
+                            ->update(['is_answered' => true]);                   
+                    // }
+                }
             }
+            DB::commit();
+        }
+        catch(Exception $e){
+            DB::rollBack();
+            Log::info($e);
         }
 
 
