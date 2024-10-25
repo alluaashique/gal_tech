@@ -1,3 +1,11 @@
+function showLoader() {
+    $('.loader').css('visibility', 'visible'); 
+}
+
+function hideLoader() {
+    $('.loader').css('visibility', 'hidden');
+}
+
 !function() {
     "use strict";
     var e;

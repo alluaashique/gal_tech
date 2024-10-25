@@ -25,86 +25,12 @@ class QuizController extends Controller
         $slug = str_replace('-', '_', $slug);
         return $slug;
     }
-    public function createe(Request $request,$slug)
-    {
-
-        $array = Http::get('https://the-trivia-api.com/api/questions?categories='.$slug.'&limit=15&difficulty=easy');
-
-        $quiz_uuid = Str::uuid()->toString();
-        $questions = [];
-        $array = json_decode($array, true);
-        foreach ($array as $key => $value) {
-            // Log::info($value);            
-            $correctAnswer = array($value['correctAnswer']);
-            // Log::info($correctAnswer);
-            // Log::info($value['incorrectAnswers']);
-            $options = array_merge($value['incorrectAnswers'], $correctAnswer);
-            shuffle($options);
-            $questions[] = [
-                "questionId" => $value['id'],
-                "question" => $value['question'],
-                "options" => $options,
-                "correctAnswer" => $value['correctAnswer'],
-                "difficulty" => $value['difficulty'],
-                "optedAnswer" => null,
-                "isAnswered" => false,
-                "iscorrect" => false
-            ];            
-        }
-        $quiz = array(
-            "code" => $quiz_uuid,
-            "userId" => Auth::user()->id,
-            "questions" => $questions,
-            "isAttended" => false,
-            "totalQuestion" => count($questions),
-            "rightAnwser" => 0
-        );
-
-        // Log::info($quiz);
-
-        $jsonData = json_encode($quiz); 
-
-        $fileName = 'quiz_' . $quiz_uuid . '.json';
-        Storage::disk('public')->put('quizzes/' . $fileName, $jsonData);
-        return redirect()->route('quiz.show', $quiz_uuid);
-
-        // $array = json_decode($array, true);
-        // DB::beginTransaction();
-        // try{
-        //     $count = Quiz::where('user_id', Auth::user()->id)->count();
-        //     $count++;    
-        //     $quiz = Quiz::create([
-        //         'name' => "Quiz ".$count,
-        //         'total' => 15,
-        //         'user_id' => Auth::user()->id,
-        //         'right' => 0,
-        //     ]);            
-        //     foreach ($array as $key => $value) {            
-        //         $quiz->questions()->create([
-        //             'question_id' => $value['id'],
-        //         ]);
-        //     }
-
-        //     DB::commit();
-        //     return redirect()->route('quiz.show', $quiz->code);
-        // }
-        // catch(Exception $e){
-        //     DB::rollBack();
-        //     Log::info($e);
-        //     return back();
-        // }
-       
-
-
-        // https://the-trivia-api.com/api/questions?categories=film_and_tv&limit=15&difficulty=easy
-
-
-    }
+   
     public function create(Request $request,$slug)
     {
 
         $array = Http::get('https://the-trivia-api.com/api/questions?categories='.$slug.'&limit=15&difficulty=easy');
-        Log::info($array);
+        // Log::info($array);
 
         $array = json_decode($array, true);
         DB::beginTransaction();
@@ -157,46 +83,17 @@ class QuizController extends Controller
         }
 
     }
-    public function create1(Request $request,$slug)
+   
+    public function show($quiz_uuid)
     {
 
-        $array = Http::get('https://the-trivia-api.com/api/questions?categories='.$slug.'&limit=15&difficulty=easy');
-        Log::info($array);
 
-        $array = json_decode($array, true);
-        DB::beginTransaction();
-        try{
-            $count = Quiz::where('user_id', Auth::user()->id)->count();
-            $count++;    
-            $quiz = Quiz::create([
-                'name' => "Quiz ".$count,
-                'total' => 15,
-                'user_id' => Auth::user()->id,
-                'right' => 0,
-            ]);            
-            foreach ($array as $key => $value) {            
-                $quiz->questions()->create([
-                    'question_id' => $value['id'],
-                ]);
-            }
-
-            DB::commit();
-            return redirect()->route('quiz.show', $quiz->code);
-        }
-        catch(Exception $e){
-            DB::rollBack();
-            Log::info($e);
-            return back();
-        }
+        $isAttended = Quiz::where(['code' => $quiz_uuid, 'is_attended' => true])->exists();
+        if($isAttended)
+            return redirect()->route('quiz.result', $quiz_uuid);
        
 
 
-        // https://the-trivia-api.com/api/questions?categories=film_and_tv&limit=15&difficulty=easy
-
-
-    }
-    public function show($quiz_uuid)
-    {
 
         $updateOption = Option::where('id', "!=",0)->update(['is_answered' => false]);
         $updateQuestion = Question::where('id', "!=",0)->update(['is_answered' => false]);
@@ -241,13 +138,11 @@ class QuizController extends Controller
         $quiz = Quiz::where('code', $quizId)->first();
         if($quiz)
         {
-            Quiz::where('id', $quiz->id)->update(['is_attended' => true]);
             $question = Question::where('question_id', $questionId)
                         ->where('quiz_id', $quiz->id)
                         ->first();
             if($question)
             {
-
                 $is_answered = $answerId > 0 ? true : false;
                 $updateOption = Option::where('id', $answerId)
                         ->where('question_id', $question->id)
@@ -312,6 +207,7 @@ class QuizController extends Controller
 
         if($quiz)
         {
+            Quiz::where('id', $quiz->id)->update(['is_attended' => true]);
             $right_options = Option::where([
                             'quiz_id' => $quiz->id,
                             'is_answered' => true,

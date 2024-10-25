@@ -17,5 +17,11 @@
     @yield('content')
 
     <!-- JS here -->
+    
+<div class="loader">
+    <span class="loader-text">loading</span>
+    <span class="load"></span>
+</div>
+
 </body>
 </html>

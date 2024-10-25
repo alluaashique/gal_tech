@@ -174,6 +174,10 @@
                 <input type="hidden" id="question_id">
                 <input type="hidden" id="quiz_id">
                 <input type="hidden" id="qn_no">
+                <input type="hidden" id="opt_a">
+                <input type="hidden" id="opt_b">
+                <input type="hidden" id="opt_c">
+                <input type="hidden" id="opt_d">
                 </section>
             </div>
            
@@ -184,7 +188,8 @@
 
     <script>
         $(document).ready(function(){
-            // alert();
+            let countdown;            
+            showLoader(); 
 
             function place_values(quiz_id,question_id,qn_no, question, option_a, option_b, option_c, option_d,option_a_id,option_b_id,option_c_id,option_d_id)
             {
@@ -216,6 +221,11 @@
                 $("#question_id").val(question_id);
                 $("#quiz_id").val(quiz_id);
                 $("#qn_no").val(qn_no);
+                $("#opt_a").val(option_a_id);
+                $("#opt_b").val(option_b_id);
+                $("#opt_c").val(option_c_id);
+                $("#opt_d").val(option_d_id);
+                hideLoader(); 
 
             }
             var user_id = "{{ Auth::user()->id }}";
@@ -236,18 +246,28 @@
             run_timer();
 
 
-            $('.options').click(function(){
+            // $('.options').click(function(){
+            $("body").on('click', '.options', function() {
 
                 var question_id = $("#question_id").val();
                 var quiz_id = $("#quiz_id").val();
                 var qn_no = $("#qn_no").val();
-                var answer_id = $(this).children().find('.option').data('id');                
+                //  answer_id = $(this).children().find('.option').data('id');
+                if($(this).find('.option').hasClass('option_a'))                
+                    var answer_id = $("#opt_a").val(); 
+                if($(this).find('.option').hasClass('option_b'))                
+                    var answer_id = $("#opt_b").val();                    
+                if($(this).find('.option').hasClass('option_c'))                
+                    var answer_id = $("#opt_c").val(); 
+                if($(this).find('.option').hasClass('option_d'))                
+                    var answer_id = $("#opt_d").val();                
+                clearInterval(countdown);
                 submit_answer(user_id, quiz_id, question_id, qn_no, answer_id);
             });
 
             function run_timer()
             {
-                timeLeft = 3;
+                timeLeft = 30;
                 question_id = $("#question_id").val();
                 quiz_id = $("#quiz_id").val();
                 qn_no = $("#qn_no").val();
@@ -257,7 +277,7 @@
                 
 
                 $(".timer").html(timeLeft);
-                let countdown = setInterval(function() {
+                countdown = setInterval(function() {
                     timeLeft -= 1;
                     $(".timer").html(timeLeft);
                     if (timeLeft <= 0) {
@@ -292,6 +312,7 @@
 
             function submit_answer(userId, quizId, questionId, questionNo, answerId)
             {
+                showLoader(); 
                 if(userId > 0)
                 {
                     $.ajax({
@@ -313,7 +334,7 @@
                             if(data.is_end == true)
                             {
                                 window.location.href = "{{ route('quiz.result', ':quiz_uuid') }}".replace(':quiz_uuid', data.quiz_uuid);
-                                
+                                return false;
                             }
 
                             qn_no = data.qn_no;                            
